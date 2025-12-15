@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.7">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000; min-height: 14.0px}
+    span.s1 {font-kerning: none}
+  </style>
+</head>
+<body>
+<p class="p1"><span class="s1">&lt;!doctype html&gt;</span></p>
+<p class="p1"><span class="s1">&lt;html lang="ru"&gt;</span></p>
+<p class="p1"><span class="s1">&lt;head&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta charset="utf-8" /&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;title&gt;MetalGPT Web Chat&lt;/title&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1" /&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;style&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>body { background:#0b0f14; color:#e8eef7; font-family:sans-serif; }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.wrap { max-width:1100px; margin:auto; padding:20px }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.chat { height:65vh; background:#0f1620; overflow:auto; white-space:pre-wrap; padding:10px }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>button { padding:10px; margin-left:5px }</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
+<p class="p1"><span class="s1">&lt;body&gt;</span></p>
+<p class="p1"><span class="s1">&lt;div class="wrap"&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;h2&gt;MetalGPT Web Chat&lt;/h2&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;button onclick="clearChat()"&gt;Очистить чат&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div id="chat" class="chat"&gt;&lt;/div&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;input id="inp" style="width:80%" placeholder="Вопрос..." /&gt;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;button onclick="send()"&gt;Send&lt;/button&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">&lt;script&gt;</span></p>
+<p class="p1"><span class="s1">const chat = document.getElementById("chat");</span></p>
+<p class="p1"><span class="s1">const uid = localStorage.USER_ID ||= crypto.randomUUID();</span></p>
+<p class="p1"><span class="s1">let ws, buf="";</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">function connect() {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ws = new WebSocket(`ws://${location.host}/ws`);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ws.onmessage = e =&gt; {</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const m = JSON.parse(e.data);</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>if(m.type==="token") buf+=m.text;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>if(m.type==="done") buf+="\n\n";</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>if(m.type==="cleared") buf="";</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>chat.textContent = buf;</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>};</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">connect();</span></p>
+<p class="p2"><span class="s1"></span><br></p>
+<p class="p1"><span class="s1">function send(){</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ws.send(JSON.stringify({type:"chat", user_id:uid, text:inp.value}));</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>inp.value="";</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">function clearChat(){</span></p>
+<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ws.send(JSON.stringify({type:"clear", user_id:uid}));</span></p>
+<p class="p1"><span class="s1">}</span></p>
+<p class="p1"><span class="s1">&lt;/script&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
+<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
+</body>
+</html>
