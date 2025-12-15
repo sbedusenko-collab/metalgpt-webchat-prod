@@ -1,66 +1,115 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!doctype html>
+<html lang="ru">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Times; -webkit-text-stroke: #000000; min-height: 14.0px}
-    span.s1 {font-kerning: none}
+  <meta charset="utf-8" />
+  <title>MetalGPT Web Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { background:#0b0f14; color:#e8eef7; font-family:sans-serif; display: flex; justify-content: center; }
+    .wrap { max-width:800px; width: 100%; margin:auto; padding:20px; display: flex; flex-direction: column; height: 90vh; }
+    .chat { flex-grow: 1; background:#0f1620; overflow-y:auto; white-space:pre-wrap; padding:15px; border-radius: 8px; margin-bottom: 15px; }
+    .chat-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+    .message-form { display: flex; gap: 10px; }
+    #inp { flex-grow: 1; padding: 10px; border-radius: 5px; border: 1px solid #333; background: #1a202c; color: #e8eef7; }
+    button { padding:10px 15px; border-radius: 5px; border: none; background: #3182ce; color: white; cursor: pointer; }
+    button:hover { background: #2b6cb0; }
+    .msg { margin-bottom: 12px; padding: 10px; border-radius: 7px; line-height: 1.5; }
+    .msg-user { background-color: #2a3a50; text-align: right; }
+    .msg-bot { background-color: #1a2b3c; }
+    .msg-error { background-color: #502a2a; color: #f8d7da; }
+    .status { text-align: center; color: #718096; padding: 10px; }
   </style>
 </head>
 <body>
-<p class="p1"><span class="s1">&lt;!doctype html&gt;</span></p>
-<p class="p1"><span class="s1">&lt;html lang="ru"&gt;</span></p>
-<p class="p1"><span class="s1">&lt;head&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta charset="utf-8" /&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;title&gt;MetalGPT Web Chat&lt;/title&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1" /&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;style&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>body { background:#0b0f14; color:#e8eef7; font-family:sans-serif; }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.wrap { max-width:1100px; margin:auto; padding:20px }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>.chat { height:65vh; background:#0f1620; overflow:auto; white-space:pre-wrap; padding:10px }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>button { padding:10px; margin-left:5px }</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/head&gt;</span></p>
-<p class="p1"><span class="s1">&lt;body&gt;</span></p>
-<p class="p1"><span class="s1">&lt;div class="wrap"&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;h2&gt;MetalGPT Web Chat&lt;/h2&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;button onclick="clearChat()"&gt;Очистить чат&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;div id="chat" class="chat"&gt;&lt;/div&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;input id="inp" style="width:80%" placeholder="Вопрос..." /&gt;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>&lt;button onclick="send()"&gt;Send&lt;/button&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/div&gt;</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1">&lt;script&gt;</span></p>
-<p class="p1"><span class="s1">const chat = document.getElementById("chat");</span></p>
-<p class="p1"><span class="s1">const uid = localStorage.USER_ID ||= crypto.randomUUID();</span></p>
-<p class="p1"><span class="s1">let ws, buf="";</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1">function connect() {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ws = new WebSocket(`ws://${location.host}/ws`);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ws.onmessage = e =&gt; {</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>const m = JSON.parse(e.data);</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>if(m.type==="token") buf+=m.text;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>if(m.type==="done") buf+="\n\n";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>if(m.type==="cleared") buf="";</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">    </span>chat.textContent = buf;</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>};</span></p>
-<p class="p1"><span class="s1">}</span></p>
-<p class="p1"><span class="s1">connect();</span></p>
-<p class="p2"><span class="s1"></span><br></p>
-<p class="p1"><span class="s1">function send(){</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ws.send(JSON.stringify({type:"chat", user_id:uid, text:inp.value}));</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>inp.value="";</span></p>
-<p class="p1"><span class="s1">}</span></p>
-<p class="p1"><span class="s1">function clearChat(){</span></p>
-<p class="p1"><span class="s1"><span class="Apple-converted-space">  </span>ws.send(JSON.stringify({type:"clear", user_id:uid}));</span></p>
-<p class="p1"><span class="s1">}</span></p>
-<p class="p1"><span class="s1">&lt;/script&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/body&gt;</span></p>
-<p class="p1"><span class="s1">&lt;/html&gt;</span></p>
+<div class="wrap">
+  <h2>MetalGPT Web Chat</h2>
+  <div class="chat-controls">
+    <button onclick="clearChat()">Очистить чат</button>
+  </div>
+  <div id="chat" class="chat"></div>
+  <div id="status" class="status"></div>
+  <form id="message-form" class="message-form" onsubmit="send(event)">
+    <input id="inp" autocomplete="off" placeholder="Задайте ваш вопрос..." />
+    <button type="submit">Отправить</button>
+  </form>
+</div>
+
+<script>
+const chat = document.getElementById("chat");
+const inp = document.getElementById("inp");
+const status = document.getElementById("status");
+const uid = localStorage.USER_ID || (localStorage.USER_ID = crypto.randomUUID());
+let ws;
+let currentBotMessageElement = null;
+
+function addMessage(text, role) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `msg msg-${role}`;
+    msgDiv.textContent = text;
+    chat.appendChild(msgDiv);
+    chat.scrollTop = chat.scrollHeight;
+    return msgDiv;
+}
+
+function connect() {
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    ws = new WebSocket(`${proto}//${location.host}/ws`);
+    status.textContent = "Подключение...";
+
+    ws.onopen = () => {
+        status.textContent = "Подключено";
+        setTimeout(() => status.textContent = "", 2000);
+    };
+
+    ws.onmessage = e => {
+        const m = JSON.parse(e.data);
+        switch (m.type) {
+            case "token":
+                if (!currentBotMessageElement) {
+                    currentBotMessageElement = addMessage("", "bot");
+                }
+                currentBotMessageElement.textContent += m.text;
+                chat.scrollTop = chat.scrollHeight;
+                break;
+            case "done":
+                currentBotMessageElement = null;
+                break;
+            case "cleared":
+                chat.innerHTML = "";
+                addMessage("История чата очищена.", "bot");
+                break;
+            case "error":
+                addMessage(`Ошибка: ${m.message}`, "error");
+                break;
+        }
+    };
+
+    ws.onclose = () => {
+        status.textContent = "Соединение потеряно. Попытка переподключения через 3с...";
+        setTimeout(connect, 3000);
+    };
+
+    ws.onerror = () => {
+        ws.close();
+    };
+}
+
+function send(event) {
+    event.preventDefault();
+    const text = inp.value.trim();
+    if (!text || ws.readyState !== WebSocket.OPEN) return;
+    
+    addMessage(text, "user");
+    ws.send(JSON.stringify({ type: "chat", user_id: uid, text: text }));
+    inp.value = "";
+}
+
+function clearChat() {
+    if (ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: "clear", user_id: uid }));
+}
+
+connect();
+</script>
 </body>
 </html>
