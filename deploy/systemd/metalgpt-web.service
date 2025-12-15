@@ -1,7 +1,9 @@
 [Unit]
 Description=MetalGPT Web
-After=metalgpt-vllm.service
-Requires=metalgpt-vllm.service
+# Запускается после vLLM и Docker (для Redis)
+After=metalgpt-vllm.service docker.service
+# Требует, чтобы vLLM и Docker были запущены
+Requires=metalgpt-vllm.service docker.service
 
 [Service]
 User=metalgpt
@@ -9,3 +11,8 @@ WorkingDirectory=/opt/metalgpt/backend
 EnvironmentFile=/opt/metalgpt/backend/.env
 ExecStart=/opt/metalgpt/venv/bin/uvicorn main:app --host 127.0.0.1 --port 9000
 Restart=always
+# Добавляем задержку в 5 секунд перед перезапуском
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,7 @@
 [Unit]
 Description=MetalGPT vLLM
-After=network.target
+# Запускается после старта сети и Docker
+After=network.target docker.service
 
 [Service]
 User=metalgpt
@@ -15,3 +16,8 @@ ExecStart=/opt/metalgpt/venv/bin/vllm serve nn-tech/MetalGPT-1 \
   --max-num-batched-tokens 12288 \
   --api-key ${VLLM_KEY}
 Restart=always
+# Добавляем задержку в 5 секунд перед перезапуском
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
