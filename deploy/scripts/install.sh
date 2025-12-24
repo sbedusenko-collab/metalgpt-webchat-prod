@@ -50,10 +50,48 @@ else
     warning_msg "Пользователь metalgpt уже существует"
 fi
 
-echo "Обновление списка пакетов и установка зависимостей..."
+echo "Обновление списка пакетов..."
 apt update || error_exit "Не удалось обновить список пакетов"
-apt install -y nginx python3-venv docker.io docker-compose-plugin || error_exit "Не удалось установить зависимости"
-success_msg "Зависимости установлены"
+
+echo "Установка базовых зависимостей..."
+apt install -y nginx python3-venv ca-certificates curl gnupg lsb-release || error_exit "Не удалось установить базовые зависимости"
+success_msg "Базовые зависимости установлены"
+
+# Установка Docker из официального репозитория
+echo "Настройка репозитория Docker..."
+
+# Удаляем старые версии Docker если есть
+apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+
+# Добавляем GPG ключ Docker
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Добавляем репозиторий Docker
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+success_msg "Репозиторий Docker добавлен"
+
+echo "Обновление списка пакетов с новым репозиторием..."
+apt update || error_exit "Не удалось обновить список пакетов"
+
+echo "Установка Docker и Docker Compose..."
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || error_exit "Не удалось установить Docker"
+success_msg "Docker и Docker Compose установлены"
+
+# Проверяем установку Docker
+echo "Проверка версий установленного ПО..."
+docker --version || error_exit "Docker не установлен корректно"
+docker compose version || error_exit "Docker Compose не установлен корректно"
+success_msg "Docker $(docker --version | cut -d' ' -f3) и Docker Compose $(docker compose version --short) готовы к работе"
+
+# Запускаем и включаем Docker
+systemctl enable docker || error_exit "Не удалось включить службу Docker"
+systemctl start docker || error_exit "Не удалось запустить службу Docker"
+success_msg "Служба Docker запущена"
 
 # Добавляем пользователя metalgpt в группу docker
 echo "Добавление пользователя metalgpt в группу docker..."
@@ -66,8 +104,16 @@ mkdir -p "$APP_DIR"/{logs,static,media,data}
 
 # Копируем код приложения
 echo "Копирование кода приложения..."
-rsync -av --exclude='__pycache__' --exclude='*.pyc' --exclude='.git' \
-    "$PROJECT_ROOT/backend/" "$APP_DIR/backend/" || error_exit "Не удалось скопировать код приложения"
+if command -v rsync &> /dev/null; then
+    rsync -av --exclude='__pycache__' --exclude='*.pyc' --exclude='.git' --exclude='venv' \
+        "$PROJECT_ROOT/backend/" "$APP_DIR/backend/" || error_exit "Не удалось скопировать код приложения"
+else
+    # Если rsync нет, используем cp
+    cp -r "$PROJECT_ROOT/backend/" "$APP_DIR/" || error_exit "Не удалось скопировать код приложения"
+    # Удаляем ненужное
+    find "$APP_DIR/backend" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+    find "$APP_DIR/backend" -type f -name '*.pyc' -delete 2>/dev/null || true
+fi
 success_msg "Код приложения скопирован"
 
 echo "Настройка виртуального окружения Python..."
@@ -158,6 +204,12 @@ echo "=========================================="
 echo -e "${GREEN}Установка успешно завершена!${NC}"
 echo "=========================================="
 echo ""
+echo "Установленные версии:"
+echo "  Docker: $(docker --version | cut -d' ' -f3)"
+echo "  Docker Compose: $(docker compose version --short)"
+echo "  Python: $(python3 --version | cut -d' ' -f2)"
+echo "  Nginx: $(nginx -v 2>&1 | cut -d'/' -f2)"
+echo ""
 echo "Полезные команды:"
 echo "  Проверка статуса служб:"
 echo "    systemctl status metalgpt-vllm"
@@ -167,6 +219,7 @@ echo "    journalctl -u metalgpt-vllm -f"
 echo "    journalctl -u metalgpt-web -f"
 echo "  Проверка Redis:"
 echo "    docker compose -f $PROJECT_ROOT/deploy/docker-compose.redis.yml ps"
+echo "    docker compose -f $PROJECT_ROOT/deploy/docker-compose.redis.yml logs"
 echo ""
 if [ -f "$APP_DIR/.env" ]; then
     warning_msg "Не забудьте настроить файл $APP_DIR/.env перед использованием!"
