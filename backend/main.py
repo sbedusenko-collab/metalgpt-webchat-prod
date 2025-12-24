@@ -52,7 +52,10 @@ app.add_middleware(
 )
 
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
-app.mount("/static", StaticFiles(directory=os.path.join(FRONTEND_DIR, "static")), name="static")
+STATIC_DIR = os.path.join(FRONTEND_DIR, "static")
+if os.path.isdir(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 
 r: Optional[redis.Redis] = None
 tokenizer: Optional[AutoTokenizer] = None
